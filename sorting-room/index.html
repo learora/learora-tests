@@ -1,0 +1,473 @@
+<title>The Sorting Room</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&display=swap">
+<style>
+  :root{
+    --paper:#edeee7; --paper-raised:#f7f7f2; --ink:#21241f; --ink-soft:#4b4d45;
+    --muted:#7a7a70; --line:#cdcabb; --accent:#7a2e22; --accent-soft:#e9d9d2;
+    --accent-2:#3c5a52; --accent-2-soft:#dbe4e0; --focus:#2f5aa8; --shadow:rgba(33,36,31,.10);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#1c1d18; --paper-raised:#24251f; --ink:#eae7dc; --ink-soft:#c7c4b6;
+      --muted:#93917f; --line:#3d3d33; --accent:#e08a72; --accent-soft:#3a251f;
+      --accent-2:#86ab9f; --accent-2-soft:#223330; --focus:#8fb2ec; --shadow:rgba(0,0,0,.45);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#1c1d18; --paper-raised:#24251f; --ink:#eae7dc; --ink-soft:#c7c4b6;
+    --muted:#93917f; --line:#3d3d33; --accent:#e08a72; --accent-soft:#3a251f;
+    --accent-2:#86ab9f; --accent-2-soft:#223330; --focus:#8fb2ec; --shadow:rgba(0,0,0,.45);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:"Newsreader", ui-serif, Georgia, serif;
+  }
+  .mono{ font-family:"IBM Plex Mono", ui-monospace, "SF Mono", monospace; }
+
+  .wrap{ max-width:640px; margin:0 auto; padding:2.5rem 1.25rem 6rem; }
+  [hidden]{ display:none !important; }
+
+  .eyebrow{
+    font-family:"IBM Plex Mono", monospace; font-size:.72rem; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--accent); margin:0 0 .6rem;
+  }
+  h1{
+    font-family:"Newsreader", serif; font-weight:600; font-size:2rem; line-height:1.15;
+    margin:0 0 1rem; text-wrap:balance;
+  }
+  h2{
+    font-family:"Newsreader", serif; font-weight:600; font-size:1.4rem; margin:0 0 .75rem;
+    text-wrap:balance;
+  }
+  p{ line-height:1.6; margin:0 0 1rem; color:var(--ink-soft); font-size:1.05rem; }
+  strong{ color:var(--ink); }
+
+  .rule{ border:none; border-top:1px solid var(--line); margin:1.5rem 0; }
+
+  .btn{
+    font-family:"IBM Plex Mono", monospace; font-size:.85rem; font-weight:500;
+    letter-spacing:.02em; padding:.85rem 1.4rem; border-radius:3px; border:1px solid var(--ink);
+    background:var(--ink); color:var(--paper); cursor:pointer; display:inline-flex;
+    align-items:center; gap:.5rem; transition:opacity .15s ease, transform .1s ease;
+  }
+  .btn:hover{ opacity:.85; }
+  .btn:active{ transform:translateY(1px); }
+  .btn:disabled{ opacity:.35; cursor:not-allowed; }
+  .btn:focus-visible{ outline:2px solid var(--focus); outline-offset:2px; }
+  .btn-ghost{
+    background:transparent; color:var(--ink); border:1px solid var(--line);
+  }
+
+  /* ---- intro ---- */
+  .stamp{
+    display:inline-block; font-family:"IBM Plex Mono", monospace; font-size:.7rem;
+    letter-spacing:.1em; text-transform:uppercase; border:1px solid var(--accent);
+    color:var(--accent); padding:.25rem .55rem; border-radius:2px; margin-bottom:1.25rem;
+  }
+  .steps{ margin:1.5rem 0 2rem; padding:0; list-style:none; }
+  .steps li{
+    display:flex; gap:.9rem; padding:.75rem 0; border-top:1px solid var(--line);
+    font-size:.98rem; color:var(--ink-soft);
+  }
+  .steps li:last-child{ border-bottom:1px solid var(--line); }
+  .steps .num{
+    font-family:"IBM Plex Mono", monospace; font-size:.8rem; color:var(--accent);
+    flex:0 0 1.6rem;
+  }
+  input[type="text"]{
+    width:100%; font-family:"Newsreader", serif; font-size:1.05rem; padding:.7rem .85rem;
+    border:1px solid var(--line); border-radius:3px; background:var(--paper-raised);
+    color:var(--ink);
+  }
+  input[type="text"]:focus-visible, textarea:focus-visible{ outline:2px solid var(--focus); outline-offset:1px; }
+  label{ display:block; font-family:"IBM Plex Mono", monospace; font-size:.75rem;
+    letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-bottom:.4rem; }
+  .field{ margin-bottom:1.4rem; }
+
+  /* ---- reading screen ---- */
+  .progress-bar{
+    position:sticky; top:0; z-index:5; background:var(--paper); padding:.9rem 0;
+    display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--line);
+    margin-bottom:1.5rem;
+  }
+  .progress-track{
+    flex:1; height:3px; background:var(--line); margin:0 1rem; position:relative; border-radius:2px; overflow:hidden;
+  }
+  .progress-fill{ position:absolute; inset:0 auto 0 0; width:0%; background:var(--accent); transition:width .2s ease; }
+
+  .card{
+    background:var(--paper-raised); border:1px solid var(--line); border-radius:4px;
+    padding:1.4rem 1.5rem 1.5rem; margin-bottom:1.1rem; box-shadow:0 1px 2px var(--shadow);
+    position:relative;
+  }
+  .card-index{
+    font-family:"IBM Plex Mono", monospace; font-size:.68rem; color:var(--muted);
+    letter-spacing:.08em; margin-bottom:.7rem; display:block;
+  }
+  .card h3{
+    font-family:"Newsreader", serif; font-weight:600; font-size:1.15rem; line-height:1.35;
+    margin:0 0 .8rem; color:var(--ink);
+  }
+  .card p{ margin:0; font-size:1rem; }
+
+  .sentinel{ height:1px; }
+
+  /* ---- selection screen ---- */
+  .select-bar{
+    position:sticky; top:0; z-index:5; background:var(--paper); padding:1rem 0 .9rem;
+    border-bottom:1px solid var(--line); margin-bottom:1.2rem;
+  }
+  .counters{ display:flex; gap:1.5rem; font-family:"IBM Plex Mono", monospace; font-size:.85rem; }
+  .counter{ display:flex; align-items:center; gap:.45rem; }
+  .counter .dot{ width:8px; height:8px; border-radius:50%; }
+  .dot.send{ background:var(--accent); }
+  .dot.cut{ background:var(--accent-2); }
+  .counter.done{ color:var(--ink); font-weight:600; }
+  .counter.pending{ color:var(--muted); }
+
+  .row{
+    display:flex; align-items:center; gap:.75rem; padding:.85rem 0; border-top:1px solid var(--line);
+  }
+  .row:last-child{ border-bottom:1px solid var(--line); }
+  .row-hook{ flex:1; font-size:.98rem; line-height:1.4; color:var(--ink-soft); }
+  .row-actions{ display:flex; gap:.4rem; flex:0 0 auto; }
+  .chip{
+    font-family:"IBM Plex Mono", monospace; font-size:.7rem; letter-spacing:.04em;
+    padding:.4rem .65rem; border-radius:3px; border:1px solid var(--line); background:transparent;
+    color:var(--muted); cursor:pointer; white-space:nowrap;
+  }
+  .chip:hover{ border-color:var(--ink-soft); color:var(--ink); }
+  .chip.active-send{ background:var(--accent); border-color:var(--accent); color:var(--paper-raised); }
+  .chip.active-cut{ background:var(--accent-2); border-color:var(--accent-2); color:var(--paper-raised); }
+  .chip:disabled{ opacity:.3; cursor:not-allowed; }
+
+  .footer-nav{
+    position:sticky; bottom:0; background:var(--paper); padding:1rem 0; margin-top:1.5rem;
+    border-top:1px solid var(--line); display:flex; justify-content:flex-end; gap:.75rem;
+  }
+</style>
+
+<div class="wrap">
+
+  <!-- ============ INTRO ============ -->
+  <section id="screen-intro">
+    <span class="stamp">Reading test · Learora</span>
+    <h1>The Sorting Room</h1>
+    <p>You're about to read <span id="intro-count">18</span> short pieces — the same batch a few other people are reading too. Some were written for an app called Learora. A few are just lightly reworded encyclopedia paragraphs, mixed in as a control. You won't be told which is which until after you submit.</p>
+    <ul class="steps">
+      <li><span class="num mono">01</span><span>Read all 23. Take your time — there's no clock.</span></li>
+      <li><span class="num mono">02</span><span>Pick the <strong>5</strong> you'd actually send to a friend, and the <strong>3</strong> you'd cut entirely.</span></li>
+      <li><span class="num mono">03</span><span>In one sentence, say what you think the app is for.</span></li>
+    </ul>
+    <div class="field">
+      <label for="input-name">Your name (so the results make sense — optional)</label>
+      <input type="text" id="input-name" placeholder="e.g. Sam" autocomplete="off">
+    </div>
+    <button class="btn" id="btn-start">Start reading →</button>
+  </section>
+
+  <!-- ============ READING ============ -->
+  <section id="screen-read" hidden>
+    <div class="progress-bar">
+      <span class="mono" style="font-size:.75rem;color:var(--muted);" id="progress-label">0 / 23 read</span>
+      <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+      <span class="eyebrow" style="margin:0;">Reading</span>
+    </div>
+    <div id="card-list"></div>
+    <div class="sentinel" id="read-sentinel"></div>
+    <div class="footer-nav">
+      <button class="btn" id="btn-to-select" disabled>Continue to sorting →</button>
+    </div>
+  </section>
+
+  <!-- ============ SELECT ============ -->
+  <section id="screen-select" hidden>
+    <div class="select-bar">
+      <h2 style="margin-bottom:.6rem;">Sort what you just read</h2>
+      <p style="margin-bottom:.8rem;">Mark exactly 5 to <strong>send</strong> and exactly 3 to <strong>cut</strong>. Leave the rest unmarked.</p>
+      <div class="counters">
+        <span class="counter pending" id="counter-send"><span class="dot send"></span>Send 0 / 5</span>
+        <span class="counter pending" id="counter-cut"><span class="dot cut"></span>Cut 0 / 3</span>
+      </div>
+    </div>
+    <div id="select-list"></div>
+    <div class="footer-nav">
+      <button class="btn" id="btn-to-guess" disabled>Continue →</button>
+    </div>
+  </section>
+
+  <!-- ============ GUESS ============ -->
+  <section id="screen-guess" hidden>
+    <span class="eyebrow">Last thing</span>
+    <h2>In one sentence — what do you think this app is?</h2>
+    <p>No wrong answer. First instinct is the useful one.</p>
+    <div class="field">
+      <textarea id="input-guess" rows="3" style="width:100%;font-family:'Newsreader',serif;font-size:1.05rem;padding:.7rem .85rem;border:1px solid var(--line);border-radius:3px;background:var(--paper-raised);color:var(--ink);" placeholder="It's an app for…"></textarea>
+    </div>
+    <button class="btn" id="btn-submit">Submit</button>
+  </section>
+
+  <!-- ============ DONE ============ -->
+  <section id="screen-done" hidden>
+    <span class="eyebrow">Done</span>
+    <h1>That's it — thank you.</h1>
+    <p id="done-note">Copy this and send it back however you got this link (text, email, whatever's easiest). That's the whole handoff — nothing here saves itself anywhere.</p>
+    <textarea id="results-text" readonly rows="12" style="width:100%;font-family:'IBM Plex Mono',monospace;font-size:.85rem;line-height:1.5;padding:.9rem 1rem;border:1px solid var(--line);border-radius:4px;background:var(--paper-raised);color:var(--ink);resize:vertical;"></textarea>
+    <div style="margin-top:1rem;display:flex;gap:.75rem;align-items:center;">
+      <button class="btn" id="btn-copy">Copy results</button>
+      <span class="mono" id="copy-confirm" style="font-size:.8rem;color:var(--muted);" hidden>Copied ✓</span>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  var CARDS = [
+    {id:"napoleon-height-myth", seed:false, hook:"Napoleon Bonaparte was around average height for a Frenchman of his era — maybe even a little taller.", read:`Napoleon is remembered as short enough to have a psychological complex named after him, but the doctor who examined his body in 1821 recorded him at roughly 5'2" — in French inches, which were longer than English ones. Converted correctly, that's about 5'6"-5'7", above the average Frenchman's height at the time. The myth traces largely to one British cartoonist, James Gillray, who spent years drawing him small to make a political point. It worked well enough to outlive the joke by two centuries.`},
+    {id:"shortest-war-anglo-zanzibar", seed:false, hook:"The shortest war on record lasted about 38 minutes.", read:`On the morning of August 27, 1896, British warships in Zanzibar's harbor gave the new, unapproved sultan an ultimatum to vacate his palace. When it expired, they opened fire. The palace was reduced to rubble, roughly 500 people inside were killed, and the sultan fled out a back door — all before 9:40am. British casualties: one sailor, injured. It remains the shortest recorded war in history.`},
+    {id:"caesar-kaiser-tsar", seed:false, hook:`"Kaiser" and "Tsar" both come from a Roman family name — not a title anyone was ever crowned with.`, read:`Caesar started as a surname, belonging to one branch of the Julian family, the most famous member of which was Julius Caesar. After his adopted heir Augustus used it too, later emperors kept doing the same, and within a century "Caesar" had drifted from someone's last name into a job title. It traveled outward from there: German rulers turned it into Kaiser, Slavic rulers turned it into Tsar. Two millennia later, both words still point back to one Roman family that never held either title.`},
+    {id:"marathon-distance-royal-viewing", seed:false, hook:"The marathon's exact distance — 26.2 miles — was set so British royalty could watch the finish from their box.", read:`Ancient Greek messenger runs varied in length depending which race organizers told the story; there was no fixed marathon distance until the 1908 London Olympics. Organizers started the race at Windsor Castle so the royal children could watch from their nursery window, then routed it to finish directly in front of the royal box at White City Stadium. That combination happened to measure 26 miles, 385 yards. It wasn't adopted as the permanent official distance until 1921 — thirteen years of runners racing a number chosen for a good view, not a good reason.`},
+    {id:"fosbury-flop-adoption", seed:false, hook:"The technique used by nearly every elite high jumper today was invented by one guy who was bad at the old one.", read:`Every high jumper before 1968 cleared the bar facing it — a straddle or a scissor kick. Dick Fosbury was mediocre at both, so in high school he started going over backwards and headfirst instead, arching his back over the bar like a comma. Coaches thought it looked like a mistake. He won Olympic gold with it in 1968; by the very next Games, 28 of 40 competitors had switched. The straddle technique hasn't appeared at an Olympics since 1988.`},
+    {id:"change-blindness-door-study", seed:false, hook:"In an experiment, a stranger swapped mid-conversation with someone else — and more than half the people talking to him didn't notice.", read:`In a study by Daniel Simons and Daniel Levin, a researcher stopped pedestrians to ask for directions. Partway through, two people carrying a door walked between them, and — hidden by the door for about a second — the researcher swapped places with one of the door-carriers. A different person picked up the exact same conversation. Only 7 of 15 pedestrians noticed they were now talking to someone else. The rest kept giving directions to a stranger, apparently unbothered that his shirt, voice and face had all just changed.`},
+    {id:"ten-thousand-hour-rule-reframe", seed:false, hook:`The "10,000 hours to mastery" rule was never actually found in the study everyone cites for it.`, read:`The number comes from a 1993 study of violin students, where the most accomplished group averaged around 10,000 hours of practice by age 20 — one average among several, not a discovered threshold. Malcolm Gladwell turned it into a rule in 2008. When a 2014 meta-analysis revisited the evidence across many fields, deliberate practice explained only a modest share of who became expert and who didn't — and a later attempt to redo the original violin study found the "merely good" group had logged more practice hours than the group rated best.`},
+    {id:"semmelweis-handwashing", seed:false, hook:"The doctor who discovered handwashing stops deadly infections was laughed out of medicine for it.", read:`In 1840s Vienna, women giving birth on the ward staffed by doctors died of infection at several times the rate of those on the midwives' ward — the only difference Ignaz Semmelweis could find was that the doctors came straight from autopsies. He ordered handwashing with a chlorine solution; deaths on his ward collapsed. His colleagues found the implication — that they themselves had been the ones killing patients — intolerable, and dismissed him. He died in an asylum in 1865, seventeen years before germ theory proved him right.`},
+    {id:"patient-hm-procedural-memory", seed:false, hook:"A man who couldn't remember learning a skill still got better at it every single day.", read:`In 1953, surgeons removed both of Henry Molaison's hippocampi to stop severe seizures. It worked — and left him unable to form new long-term memories of any event or fact for the rest of his life. But given a pencil and a mirror-reversed star to trace, day after day, his drawings got steadily more accurate — even though each session, he had no memory of ever having tried before. His case gave neuroscience its clearest evidence that memory isn't one system: the part that stores facts and the part that stores skills can be entirely separate.`},
+    {id:"blindsight", seed:false, hook:"Some people who are cortically blind can still correctly point to objects they insist they cannot see.", read:`Damage to the brain's primary visual cortex can destroy conscious sight in part of the visual field while leaving the eyes themselves undamaged. Ask a patient with this kind of damage what's in front of them, and they'll say they see nothing. Ask them to guess anyway — point at where a light is, or which way a line is tilted — and they perform far better than chance, sometimes nearly as well as someone who can actually see it. Researchers named it blindsight: visual information still reaching the brain and shaping behavior, with the experience of seeing switched off.`},
+    {id:"split-brain-independent-hemispheres", seed:false, hook:"Surgeons once cured epilepsy by cutting the bridge between a patient's two brain hemispheres — and left some patients acting like they had two separate minds.", read:`Severing the corpus callosum, the thick bundle of fibers connecting the brain's left and right hemispheres, was a real last-resort epilepsy treatment starting in the 1960s. It worked. It also let researchers Roger Sperry and Michael Gazzaniga test each hemisphere on its own — and find that a patient's left hand could easily solve a spatial puzzle that the same patient's right hand, guided by the other hemisphere, could not. Each half of the brain, it turned out, could learn, perceive and solve problems somewhat independently of the other — they just don't usually get the chance to disagree.`},
+    {id:"mantis-shrimp-color-vision-paradox", seed:false, hook:"The animal with the most color receptors on Earth is worse at telling colors apart than you are.", read:`Mantis shrimp have 12 types of color receptors in their eyes; humans have three, which is why they're often described as seeing colors humans can't even imagine. A 2014 study tested that assumption directly, training mantis shrimp to distinguish between similar wavelengths of light — and found their discrimination was roughly ten times worse than humans, goldfish or butterflies. The likely explanation flips the story: instead of blending signals from all 12 receptors like humans blend three, mantis shrimp seem to scan a scene receptor by receptor, trading fine discrimination for near-instant recognition.`},
+    {id:"tardigrades-survive-space", seed:false, hook:"In 2007, a European Space Agency experiment put a small animal directly into the vacuum of space, unprotected — and it survived.", read:`Tardigrades, microscopic eight-legged animals also called water bears, were dried out and strapped to the outside of a spacecraft for the FOTON-M3 mission, then exposed for ten days to the vacuum of space, extreme cold, and unfiltered solar radiation with no spacesuit, capsule or shielding of any kind. When researchers rehydrated them back on Earth, most were still alive, and some went on to reproduce normally. It remains the first time any animal was shown to survive open space exposure directly.`},
+    {id:"elephant-mirror-self-recognition", seed:false, hook:"Give an elephant a mirror and a mark on her face she's never seen — and she'll reach up and touch the exact spot.", read:`Most animals shown a mirror react to it as though it were another animal, forever. Only a handful of species — great apes, dolphins, magpies, and, since a 2006 study, Asian elephants — pass the classic test for recognizing that the reflection is themselves: painting a mark somewhere the animal can't normally see, then watching whether it touches the mark on its own body rather than the mirror. Of three elephants tested, only one, a female named Happy, passed — repeatedly touching a white cross on her forehead only while facing the glass.`},
+    {id:"seed-french-revolution", seed:true, hook:"The French Revolution", read:`The French Revolution was a period of major political and social upheaval in France, running from the Estates General of 1789 through the Coup of 18 Brumaire in 1799. It grew out of a mix of social, political and economic pressures that the existing monarchy could not manage. Many of the ideas that emerged from it — about representation, citizenship and the limits of royal power — are now considered foundational to liberal democracy, and remain a reference point in French political life today.`},
+    {id:"seed-cricket", seed:true, hook:"Cricket", read:`Cricket is a bat-and-ball sport played between two teams of eleven players on a large field. At the centre of the field is a 22-yard pitch, with a wicket set up at each end — three upright stumps topped by two small crosspieces called bails. One team bats while the other bowls and fields, and the two sides switch roles over the course of the match. Formats vary widely, from a few hours to matches played across five days.`},
+    {id:"seed-classical-conditioning", seed:true, hook:"Classical Conditioning", read:`Classical conditioning, also called Pavlovian conditioning, is a form of learning in which a neutral stimulus comes to trigger a response after being repeatedly paired with a stimulus that already produces that response naturally. The Russian physiologist Ivan Pavlov identified the pattern while studying dogs' digestion in the 1890s, after noticing they salivated at the sound of their feeder's footsteps, not just at the sight of food. Paired repeatedly with feeding, a neutral cue like a bell could come to trigger salivation on its own. The idea became one of the foundations of behaviorism in twentieth-century psychology.`},
+    {id:"seed-giant-panda", seed:true, hook:"The Giant Panda", read:`The giant panda is a bear species native to China, easily recognized by its rounded body and black-and-white coat. Adults typically weigh between 100 and 115 kilograms. Though classified within the order Carnivora, its diet is almost entirely bamboo, and it has a small wrist bone extended into a pseudo-thumb that helps it grip bamboo stalks while feeding. Wild populations are concentrated in a handful of mountain ranges in central China.`}
+  ];
+
+  var STORAGE_ORDER = "sortingRoomOrder_v1";
+  var STORAGE_STATE = "sortingRoomState_v1";
+
+  function shuffledIds(){
+    var saved = null;
+    try { saved = JSON.parse(sessionStorage.getItem(STORAGE_ORDER) || "null"); } catch(e){}
+    if (saved && saved.length === CARDS.length) return saved;
+    var ids = CARDS.map(function(c){ return c.id; });
+    for (var i = ids.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = ids[i]; ids[i] = ids[j]; ids[j] = t;
+    }
+    try { sessionStorage.setItem(STORAGE_ORDER, JSON.stringify(ids)); } catch(e){}
+    return ids;
+  }
+
+  var byId = {};
+  CARDS.forEach(function(c){ byId[c.id] = c; });
+  var order = shuffledIds().map(function(id){ return byId[id]; });
+
+  var state = { name: "", sendIds: [], cutIds: [], guess: "", submitted: false };
+  try {
+    var savedState = JSON.parse(localStorage.getItem(STORAGE_STATE) || "null");
+    if (savedState) state = savedState;
+  } catch(e){}
+
+  function show(id){
+    ["screen-intro","screen-read","screen-select","screen-guess","screen-done"].forEach(function(s){
+      document.getElementById(s).hidden = (s !== id);
+    });
+    window.scrollTo(0,0);
+  }
+
+  function saveState(){
+    try { localStorage.setItem(STORAGE_STATE, JSON.stringify(state)); } catch(e){}
+  }
+
+  // ---- render reading list ----
+  var cardList = document.getElementById("card-list");
+  var seenCount = 0;
+  var seen = {};
+  order.forEach(function(card, i){
+    var el = document.createElement("div");
+    el.className = "card";
+    el.dataset.idx = i;
+    el.innerHTML =
+      '<span class="card-index mono">CARD ' + String(i+1).padStart(2,"0") + ' / ' + order.length + '</span>' +
+      '<h3></h3><p></p>';
+    el.querySelector("h3").textContent = card.hook;
+    el.querySelector("p").textContent = card.read;
+    cardList.appendChild(el);
+  });
+
+  var progressLabel = document.getElementById("progress-label");
+  var progressFill = document.getElementById("progress-fill");
+  var cardObserver = new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){
+      if (entry.isIntersecting) {
+        var idx = Number(entry.target.dataset.idx);
+        if (!seen[idx]) {
+          seen[idx] = true;
+          seenCount++;
+          progressLabel.textContent = seenCount + " / " + order.length + " read";
+          progressFill.style.width = Math.round((seenCount/order.length)*100) + "%";
+        }
+      }
+    });
+  }, { threshold: 0.6 });
+  document.querySelectorAll(".card").forEach(function(el){ cardObserver.observe(el); });
+
+  var btnToSelect = document.getElementById("btn-to-select");
+  var sentinelObserver = new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){
+      if (entry.isIntersecting) btnToSelect.disabled = false;
+    });
+  }, { threshold: 0.01 });
+  sentinelObserver.observe(document.getElementById("read-sentinel"));
+
+  // ---- intro -> reading ----
+  document.getElementById("btn-start").addEventListener("click", function(){
+    state.name = document.getElementById("input-name").value.trim();
+    saveState();
+    show("screen-read");
+  });
+
+  btnToSelect.addEventListener("click", function(){ renderSelect(); show("screen-select"); });
+
+  // ---- selection screen ----
+  var selectList = document.getElementById("select-list");
+  var counterSend = document.getElementById("counter-send");
+  var counterCut = document.getElementById("counter-cut");
+  var btnToGuess = document.getElementById("btn-to-guess");
+
+  function renderSelect(){
+    selectList.innerHTML = "";
+    order.forEach(function(card){
+      var row = document.createElement("div");
+      row.className = "row";
+      row.innerHTML =
+        '<span class="row-hook"></span>' +
+        '<span class="row-actions">' +
+          '<button class="chip" data-role="send" data-id="' + card.id + '">Send</button>' +
+          '<button class="chip" data-role="cut" data-id="' + card.id + '">Cut</button>' +
+        '</span>';
+      row.querySelector(".row-hook").textContent = card.hook;
+      selectList.appendChild(row);
+    });
+    updateSelectUI();
+    selectList.querySelectorAll(".chip").forEach(function(btn){
+      btn.addEventListener("click", function(){ toggle(btn.dataset.id, btn.dataset.role); });
+    });
+  }
+
+  function toggle(id, role){
+    var inSend = state.sendIds.indexOf(id) > -1;
+    var inCut = state.cutIds.indexOf(id) > -1;
+    if (role === "send") {
+      if (inSend) { state.sendIds.splice(state.sendIds.indexOf(id), 1); }
+      else {
+        if (state.sendIds.length >= 5) return;
+        if (inCut) state.cutIds.splice(state.cutIds.indexOf(id), 1);
+        state.sendIds.push(id);
+      }
+    } else {
+      if (inCut) { state.cutIds.splice(state.cutIds.indexOf(id), 1); }
+      else {
+        if (state.cutIds.length >= 3) return;
+        if (inSend) state.sendIds.splice(state.sendIds.indexOf(id), 1);
+        state.cutIds.push(id);
+      }
+    }
+    saveState();
+    updateSelectUI();
+  }
+
+  function updateSelectUI(){
+    counterSend.textContent = "";
+    counterSend.innerHTML = '<span class="dot send"></span>Send ' + state.sendIds.length + ' / 5';
+    counterCut.innerHTML = '<span class="dot cut"></span>Cut ' + state.cutIds.length + ' / 3';
+    counterSend.className = "counter " + (state.sendIds.length === 5 ? "done" : "pending");
+    counterCut.className = "counter " + (state.cutIds.length === 3 ? "done" : "pending");
+
+    selectList.querySelectorAll(".chip").forEach(function(btn){
+      var id = btn.dataset.id, role = btn.dataset.role;
+      var inSend = state.sendIds.indexOf(id) > -1;
+      var inCut = state.cutIds.indexOf(id) > -1;
+      btn.classList.remove("active-send","active-cut");
+      if (role === "send") {
+        btn.textContent = inSend ? "Sending" : "Send";
+        if (inSend) btn.classList.add("active-send");
+        btn.disabled = (!inSend && state.sendIds.length >= 5) || inCut;
+      } else {
+        btn.textContent = inCut ? "Cutting" : "Cut";
+        if (inCut) btn.classList.add("active-cut");
+        btn.disabled = (!inCut && state.cutIds.length >= 3) || inSend;
+      }
+    });
+
+    btnToGuess.disabled = !(state.sendIds.length === 5 && state.cutIds.length === 3);
+  }
+
+  btnToGuess.addEventListener("click", function(){ show("screen-guess"); });
+
+  // ---- guess + submit ----
+  var inputGuess = document.getElementById("input-guess");
+  inputGuess.value = state.guess || "";
+  var btnSubmit = document.getElementById("btn-submit");
+
+  btnSubmit.addEventListener("click", function(){
+    state.guess = inputGuess.value.trim();
+    state.submitted = true;
+    saveState();
+    showResultsText();
+    show("screen-done");
+  });
+
+  // ---- build the copyable results block (no account or server needed) ----
+  function hookById(id){
+    var c = byId[id];
+    return c ? c.hook : id;
+  }
+
+  function buildResultsText(){
+    var lines = [];
+    lines.push("THE SORTING ROOM — results");
+    lines.push("Name: " + (state.name || "(no name given)"));
+    lines.push("");
+    lines.push("SEND (5):");
+    state.sendIds.forEach(function(id){ lines.push("- " + hookById(id)); });
+    lines.push("");
+    lines.push("CUT (3):");
+    state.cutIds.forEach(function(id){ lines.push("- " + hookById(id)); });
+    lines.push("");
+    lines.push("What I think this app is:");
+    lines.push(state.guess || "(no answer)");
+    return lines.join("\n");
+  }
+
+  function showResultsText(){
+    document.getElementById("results-text").value = buildResultsText();
+  }
+
+  document.getElementById("btn-copy").addEventListener("click", function(){
+    var text = document.getElementById("results-text").value;
+    var confirmEl = document.getElementById("copy-confirm");
+    function flashConfirm(){
+      confirmEl.hidden = false;
+      setTimeout(function(){ confirmEl.hidden = true; }, 2000);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(flashConfirm).catch(function(){
+        document.getElementById("results-text").select();
+      });
+    } else {
+      document.getElementById("results-text").select();
+    }
+  });
+
+  // ---- resume state on load ----
+  if (state.submitted) {
+    showResultsText();
+    show("screen-done");
+  }
+})();
+</script>
