@@ -207,17 +207,25 @@
       <textarea id="input-guess" rows="3" style="width:100%;font-family:'Newsreader',serif;font-size:1.05rem;padding:.7rem .85rem;border:1px solid var(--line);border-radius:3px;background:var(--paper-raised);color:var(--ink);" placeholder="It's an app for…"></textarea>
     </div>
     <button class="btn" id="btn-submit">Submit</button>
+    <p class="mono" id="submit-status" style="font-size:.8rem;color:var(--muted);margin-top:.8rem;" hidden></p>
   </section>
 
   <!-- ============ DONE ============ -->
   <section id="screen-done" hidden>
     <span class="eyebrow">Done</span>
-    <h1>That's it — thank you.</h1>
-    <p id="done-note">Copy this and send it back however you got this link (text, email, whatever's easiest). That's the whole handoff — nothing here saves itself anywhere.</p>
-    <textarea id="results-text" readonly rows="12" style="width:100%;font-family:'IBM Plex Mono',monospace;font-size:.85rem;line-height:1.5;padding:.9rem 1rem;border:1px solid var(--line);border-radius:4px;background:var(--paper-raised);color:var(--ink);resize:vertical;"></textarea>
-    <div style="margin-top:1rem;display:flex;gap:.75rem;align-items:center;">
-      <button class="btn" id="btn-copy">Copy results</button>
-      <span class="mono" id="copy-confirm" style="font-size:.8rem;color:var(--muted);" hidden>Copied ✓</span>
+    <div id="done-success">
+      <h1>That's it — thank you.</h1>
+      <p>Your picks are sent. Nothing else to do.</p>
+    </div>
+    <div id="done-fallback" hidden>
+      <h1>Almost — one manual step.</h1>
+      <p id="done-note">Your results couldn't be sent automatically (probably a network hiccup). Copy this and send it back however you got this link instead.</p>
+      <textarea id="results-text" readonly rows="12" style="width:100%;font-family:'IBM Plex Mono',monospace;font-size:.85rem;line-height:1.5;padding:.9rem 1rem;border:1px solid var(--line);border-radius:4px;background:var(--paper-raised);color:var(--ink);resize:vertical;"></textarea>
+      <div style="margin-top:1rem;display:flex;gap:.75rem;align-items:center;">
+        <button class="btn" id="btn-retry">Try sending again</button>
+        <button class="btn btn-ghost" id="btn-copy">Copy results</button>
+        <span class="mono" id="copy-confirm" style="font-size:.8rem;color:var(--muted);" hidden>Copied ✓</span>
+      </div>
     </div>
   </section>
 
@@ -410,19 +418,12 @@
   btnToGuess.addEventListener("click", function(){ show("screen-guess"); });
 
   // ---- guess + submit ----
+  var FORMSPREE_ENDPOINT = "https://formspree.io/f/mljepybw";
   var inputGuess = document.getElementById("input-guess");
   inputGuess.value = state.guess || "";
   var btnSubmit = document.getElementById("btn-submit");
+  var submitStatus = document.getElementById("submit-status");
 
-  btnSubmit.addEventListener("click", function(){
-    state.guess = inputGuess.value.trim();
-    state.submitted = true;
-    saveState();
-    showResultsText();
-    show("screen-done");
-  });
-
-  // ---- build the copyable results block (no account or server needed) ----
   function hookById(id){
     var c = byId[id];
     return c ? c.hook : id;
@@ -444,9 +445,55 @@
     return lines.join("\n");
   }
 
-  function showResultsText(){
-    document.getElementById("results-text").value = buildResultsText();
+  function attemptSubmit(){
+    submitStatus.hidden = false;
+    submitStatus.textContent = "Sending…";
+    btnSubmit.disabled = true;
+
+    fetch(FORMSPREE_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify({
+        name: state.name || "(no name given)",
+        send: state.sendIds.map(hookById),
+        cut: state.cutIds.map(hookById),
+        guess: state.guess || "(no answer)",
+        submittedAt: new Date().toISOString()
+      })
+    }).then(function(res){
+      if (!res.ok) throw new Error("bad status");
+      state.submittedOk = true;
+      saveState();
+      renderDone();
+    }).catch(function(){
+      state.submittedOk = false;
+      saveState();
+      renderDone();
+    }).finally(function(){
+      btnSubmit.disabled = false;
+      submitStatus.hidden = true;
+    });
   }
+
+  btnSubmit.addEventListener("click", function(){
+    state.guess = inputGuess.value.trim();
+    state.submitted = true;
+    saveState();
+    attemptSubmit();
+  });
+
+  function renderDone(){
+    document.getElementById("done-success").hidden = !state.submittedOk;
+    document.getElementById("done-fallback").hidden = !!state.submittedOk;
+    if (!state.submittedOk) {
+      document.getElementById("results-text").value = buildResultsText();
+    }
+    show("screen-done");
+  }
+
+  document.getElementById("btn-retry").addEventListener("click", function(){
+    attemptSubmit();
+  });
 
   document.getElementById("btn-copy").addEventListener("click", function(){
     var text = document.getElementById("results-text").value;
@@ -466,8 +513,7 @@
 
   // ---- resume state on load ----
   if (state.submitted) {
-    showResultsText();
-    show("screen-done");
+    renderDone();
   }
 })();
 </script>
